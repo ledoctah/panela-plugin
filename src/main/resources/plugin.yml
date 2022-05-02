@@ -1,0 +1,17 @@
+name: Panela
+main: dev.matheusferreira.panelaplugin.PanelaPlugin
+version: 1.1
+author: ledoctah
+
+commands:
+  test:
+    description: This is a demo command.
+    usage: /<command>
+    permission: panelaplugin.basic
+    permission-message: You don't have <permission>
+
+  release:
+    description: This is a demo command.
+    usage: /<command> [password]
+    permission: panelaplugin.basic
+    permission-message: You don't have <permission>
