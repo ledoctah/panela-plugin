@@ -4,14 +4,14 @@ version: 1.1
 author: ledoctah
 
 commands:
-  test:
-    description: This is a demo command.
-    usage: /<command>
+  register:
+    description: Register yourself with a password to login.
+    usage: /<command> <senha>
     permission: panelaplugin.basic
     permission-message: You don't have <permission>
 
-  release:
-    description: This is a demo command.
-    usage: /<command> [password]
+  login:
+    description: Login with a password.
+    usage: /<command> <senha>
     permission: panelaplugin.basic
     permission-message: You don't have <permission>

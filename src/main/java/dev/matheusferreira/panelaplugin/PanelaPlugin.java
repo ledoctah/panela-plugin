@@ -1,18 +1,26 @@
 package dev.matheusferreira.panelaplugin;
 
+import dev.matheusferreira.panelaplugin.commands.PluginCommands;
 import dev.matheusferreira.panelaplugin.database.DatabaseConnection;
 import dev.matheusferreira.panelaplugin.listeners.JoinListener;
 
+import dev.matheusferreira.panelaplugin.listeners.MoveListener;
+import dev.matheusferreira.panelaplugin.models.FrozenPlayer;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
-import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 public final class PanelaPlugin extends JavaPlugin {
+    public static List<FrozenPlayer> frozenPlayersList = new ArrayList<>();
+
     @Override
     public void onEnable() {
         try {
@@ -24,6 +32,7 @@ public final class PanelaPlugin extends JavaPlugin {
             getLogger().info("Successfully connected to the database");
 
             getServer().getPluginManager().registerEvents(new JoinListener(), this);
+            getServer().getPluginManager().registerEvents(new MoveListener(), this);
             getLogger().info("Registered events");
         } catch (SQLException e) {
             getLogger().severe("Could not connect to the database. Check your \"panela.properties\" file.");
@@ -36,54 +45,59 @@ public final class PanelaPlugin extends JavaPlugin {
 
     @Override
     public void onDisable() {
-        System.out.println("PanelaPlugin is disabled successfully!");
+        getLogger().severe("PanelaPlugin is disabled successfully!");
     }
 
     @SuppressWarnings("NullableProblems")
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
-        getLogger().info(
-            String.format(
-                "Player %s invoked command %s with args %s",
-                    sender.getName(),
-                cmd.getName(),
-                Arrays.toString(args)
-            )
-        );
+        String[] commands = {"register", "login"};
 
-        if(cmd.getName().equalsIgnoreCase("test")) {
-            sender.sendMessage("You cannot move anymore!");
+        String command = cmd.getName();
 
-            Player player = getServer().getPlayer(sender.getName());
+        boolean isCommandValid = Arrays.asList(commands).contains(command);
 
-            if(player != null) {
-                player.setWalkSpeed(0);
-            }
+        if (isCommandValid) {
+            PluginCommands commandCaller = new PluginCommands();
 
-            return true;
-        }
+            try {
+                Method method =
+                    commandCaller.getClass().getMethod(command, CommandSender.class, Command.class, String.class, String[].class);
 
-        if(cmd.getName().equalsIgnoreCase("release")) {
-            String password = args[0];
+                method.invoke(commandCaller, sender, cmd, label, args);
 
-            if (!password.equals("pass")) {
-                sender.sendMessage("Wrong password");
                 return true;
+            } catch (NoSuchMethodException e) {
+                e.printStackTrace();
+                sender.sendMessage("Invalid command");
+                return false;
+            } catch (InvocationTargetException | IllegalAccessException e) {
+                throw new RuntimeException(e);
             }
-
-            sender.sendMessage("Now you can move");
-
-            Player player = getServer().getPlayer(sender.getName());
-
-            if(player != null) {
-                player.setWalkSpeed(0.2f);
-            }
-
-            return true;
         }
-
 
         sender.sendMessage("Invalid command");
         return false;
+    }
+
+
+
+    public static void addFrozenPlayer(FrozenPlayer frozenPlayer) {
+        frozenPlayersList.add(frozenPlayer);
+    }
+
+    public static void removeFrozenPlayer(String playerName) {
+        int index = -1;
+
+        for (FrozenPlayer frozenPlayer : frozenPlayersList) {
+            if(frozenPlayer.getPlayer().getName().equals(playerName)) {
+                index = frozenPlayersList.indexOf(frozenPlayer);
+                break;
+            }
+        }
+
+        if(index >= 0) {
+            frozenPlayersList.remove(index);
+        }
     }
 }
